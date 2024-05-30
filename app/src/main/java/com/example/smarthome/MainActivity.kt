@@ -3,60 +3,62 @@ package com.example.smarthome
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+import com.example.smarthome.constants.AppStructure
+import com.example.smarthome.model.Device
+import com.example.smarthome.model.HomeViewModel
+import com.example.smarthome.model.Room
+import com.example.smarthome.navigation.MainScreen
 import com.example.smarthome.ui.theme.SmartHomeTheme
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
+
+    private val myViewModel = HomeViewModel()
+    override fun onCreate(savedInstanceState: Bundle?) = runBlocking {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             SmartHomeTheme {
-                Surface {
-                    
-                }
+                MainScreen(viewModel = myViewModel)
             }
         }
+        performBackgroundTask()
     }
-}
 
-@Composable
-fun Greeting(name: String) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight(0.5f)
-                .background(color = Color.Green)
-        ) {
-            Text(text = "Temp in $name")
+    /**
+     * Method is a simulation of interaction with cloud resource.
+     * Operations inside this method represents Model in MVVM template.
+     * Executes in high level coroutine
+     * */
+    @OptIn(DelicateCoroutinesApi::class)
+    fun performBackgroundTask() {
+        GlobalScope.launch(Dispatchers.IO) {
+            myViewModel.waterCounter = 245.894
+            myViewModel.energyCounter = 11543.81
+
+            myViewModel.addRoom(Room(AppStructure.WHOLE_SPACES, true))
+            myViewModel.addRoom(Room("Living room"))
+            myViewModel.addRoom(Room("Bedroom"))
+            val kitchen = myViewModel.addRoom(Room("Kitchen"))
+            myViewModel.addRoom(Room("Bathroom"))
+            val basement = myViewModel.addRoom(Room("Basement"))
+
+            myViewModel.addDevice(Device("Nuke", true, kitchen))
+            myViewModel.addDevice(Device("Teapot", true, kitchen))
+            myViewModel.addDevice(Device("Toaster", true, kitchen))
+            myViewModel.addDevice(Device("Lamp", true, kitchen))
+            myViewModel.addDevice(Device("Fridge", true, kitchen))
+
+            delay(20000)
+
+            myViewModel.addDevice(Device("Toaster2", true, basement))
+
+            println("Background task finished")
         }
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .background(Color.Blue)
-        )
     }
+
 }
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SmartHomeTheme {
-        Greeting("Android")
-    }
-}
-
-
