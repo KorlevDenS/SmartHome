@@ -20,13 +20,13 @@ fun AppNavGraph(
             HomeScreen(viewModel = viewModel)
         }
         composable(AppStructure.DEVICES_ROUTE) {
-            DevicesScreen()
+            DevicesScreen(viewModel = viewModel)
         }
         composable(AppStructure.LIGHTING_ROUTE) {
-            LightingScreen()
+            LightingScreen(viewModel = viewModel)
         }
         composable(AppStructure.STATS_ROUTE) {
-            StatsScreen()
+            StatsScreen(viewModel = viewModel)
         }
         composable(AppStructure.SYSTEMS_ROUTE) {
             SystemsScreen()

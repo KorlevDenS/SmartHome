@@ -1,10 +1,7 @@
 package com.example.smarthome.navigation
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -22,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
+import com.example.smarthome.constants.AppStructure
 import com.example.smarthome.model.HomeViewModel
 import com.example.smarthome.model.Room
 import com.example.smarthome.ui.theme.Purple40
@@ -93,6 +91,9 @@ fun AreaButton(
         ),
         onClick = {
             isSelected = !isSelected
+            if (areaName == AppStructure.WHOLE_SPACES) {
+                viewModel.wholeSpaceMode = isSelected
+            }
             viewModel.turnRoom(room, !room.isSelected)
             viewModel.selectArea()
         }
@@ -101,20 +102,6 @@ fun AreaButton(
             text = areaName,
             fontSize = 19.sp
         )
-    }
-}
-
-@Composable
-fun ScreenBox(
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(713.dp)
-            .background(Color.White)
-    ) {
-        content()
     }
 }
 

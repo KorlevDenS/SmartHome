@@ -16,10 +16,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
-import androidx.compose.material.Switch
-import androidx.compose.material.SwitchDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material.Text
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,8 +36,10 @@ import androidx.compose.ui.unit.sp
 import com.example.smarthome.R
 import com.example.smarthome.model.Device
 import com.example.smarthome.model.HomeViewModel
+import com.example.smarthome.model.Hygrometer
+import com.example.smarthome.model.Thermostat
 import com.example.smarthome.ui.theme.Purple40
-import com.example.smarthome.ui.theme.Purple50
+import com.example.smarthome.ui.theme.PurpleGrey80
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
@@ -45,24 +47,15 @@ fun HomeScreen(viewModel: HomeViewModel) {
         Column (
             modifier = Modifier.fillMaxWidth()
         ) {
-            SensorDataLayer(viewModel = viewModel)
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 15.dp, bottom = 5.dp),
-                text = "Working devices",
-                textAlign = TextAlign.Center,
-                fontSize = 25.sp,
-                fontWeight = FontWeight.Medium,
-                color = Purple40
-            )
+            HomeSensorData(viewModel = viewModel)
+            TitleText(text = "Working devices")
             WorkingDevices(viewModel = viewModel)
         }
     }
 }
 
 @Composable
-fun SensorDataLayer(viewModel: HomeViewModel) {
+fun HomeSensorData(viewModel: HomeViewModel) {
     Box(
         modifier = Modifier
             .padding(start = 25.dp, end = 25.dp)
@@ -76,8 +69,20 @@ fun SensorDataLayer(viewModel: HomeViewModel) {
                     .fillMaxWidth()
                     .padding(top = 15.dp)
             ) {
-                SensorSata()
-                SensorSata()
+                SensorData(sensorItem = SensorItem(
+                    title = "Temperature",
+                    iconId = R.drawable.thermostat,
+                    measureUnit = "°C",
+                    value = viewModel.selectedDevices.filterIsInstance<Thermostat>()
+                        .map{it.temperature}.average()
+                ))
+                SensorData(sensorItem = SensorItem(
+                    title = "Humidity",
+                   iconId = R.drawable.drop,
+                    measureUnit = "%",
+                    value = viewModel.selectedDevices.filterIsInstance<Hygrometer>()
+                        .map{it.humidity}.average()
+                ))
             }
             MetersData(viewModel = viewModel)
         }
@@ -98,68 +103,32 @@ fun MetersData(viewModel: HomeViewModel) {
             .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Column (
-                modifier = Modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Row {
-                    Icon(
-                        painter = painterResource(id = R.drawable.energy),
-                        contentDescription = "Icon"
-                    )
-                    Text(text = "Energy", fontWeight = FontWeight.Medium, fontSize = 20.sp)
-                }
-                Text(
-                    text = "${viewModel.energyCounter}",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 27.sp)
-                Text(text = "Kw", fontWeight = FontWeight.Medium, fontSize = 20.sp)
-            }
-            Column (
-                modifier = Modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Row {
-                    Icon(
-                        painter = painterResource(id = R.drawable.drop),
-                        contentDescription = "Icon",
-                    )
-                    Text(text = "Water", fontWeight = FontWeight.Medium, fontSize = 20.sp)
-                }
-                Text(
-                    text = "${viewModel.waterCounter}",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 27.sp)
-                Text(text = "М³", fontWeight = FontWeight.Medium, fontSize = 20.sp)
-            }
+            MeterDataLayout(title = "Energy", value = viewModel.energyCounter,
+                iconId = R.drawable.energy, measureUnit = "Kw")
+            MeterDataLayout(title = "Water", value = viewModel.waterCounter,
+                iconId = R.drawable.drop, measureUnit = "М³")
         }
     }
 }
 
 @Composable
-fun SensorSata() {
-    Card(
-        modifier = Modifier
-            .width(170.dp)
-            .height(130.dp),
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(width = 1.dp, color = Color.Black)
+fun MeterDataLayout(title: String, value: Double, iconId: Int, measureUnit: String) {
+    Column (
+        modifier = Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        Column (
-            verticalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Text(text = "Temperature / Humidity",
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+        Row {
+            Icon(
+                painter = painterResource(id = iconId),
+                contentDescription = "Icon"
             )
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Image")
-                Text(text = "Degrees")
-            }
+            Text(text = title, fontWeight = FontWeight.Medium, fontSize = 20.sp)
         }
+        Text(
+            text = "%.3f".format(value),
+            fontFamily = FontFamily.Monospace,
+            fontSize = 27.sp)
+        Text(text = measureUnit, fontWeight = FontWeight.Medium, fontSize = 20.sp)
     }
 }
 
@@ -168,7 +137,9 @@ fun WorkingDevices(viewModel: HomeViewModel) {
 
     LazyColumn {
         itemsIndexed(
-            viewModel.turnedOnDevices.chunked(3)
+            viewModel.selectedDevices.filter {
+                d -> d in viewModel.turnedOnDevices
+            }.chunked(3)
         ) { _, li ->
             LazyRow (
                 modifier = Modifier.fillMaxWidth(),
@@ -212,14 +183,16 @@ fun HomeDeviseLayout(device: Device, viewModel: HomeViewModel) {
             Switch(
                 modifier = Modifier.fillMaxWidth(),
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = Purple40, checkedTrackColor = Purple50
+                    checkedTrackColor = Purple40,
+                    uncheckedTrackColor = PurpleGrey80,
+                    uncheckedBorderColor = PurpleGrey80,
+                    uncheckedThumbColor = Color.White
                 ),
                 checked = checkedState,
                 onCheckedChange = {
                     checkedState = it
                     viewModel.turnDevice(device, checkedState)
                     viewModel.installTurnedOnDevices()
-
                 })
         }
     }
